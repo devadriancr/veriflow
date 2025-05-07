@@ -56,7 +56,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
             value,
             style: TextStyle(
               fontFamily: 'monospace',
-              fontSize: 13,
+              fontSize: 10,
               color: Colors.grey[800],
             ),
             overflow: TextOverflow.ellipsis,
@@ -68,7 +68,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
   }
 
   Widget _buildRecordItem(RecordModel record) {
-    final formattedDate = DateFormat('dd/MM/yy - HH:mm').format(
+    final formattedDate = DateFormat('dd-MM-yy - HH:mm:ss').format(
       DateTime.parse(record.creationDate).toLocal(),
     );
 
@@ -130,7 +130,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
             'No hay registros',
             style: TextStyle(
               color: Colors.grey[600],
-              fontSize: 14,
+              fontSize: 10,
             ),
           ),
         ],
@@ -143,7 +143,7 @@ class _RecordsScreenState extends State<RecordsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const Icon(Icons.error_outline, color: Colors.red, size: 24),
           const SizedBox(height: 16),
           const Text('Error al cargar datos'),
           const SizedBox(height: 16),
@@ -160,7 +160,15 @@ class _RecordsScreenState extends State<RecordsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Historial'),
+        title: const Text(
+          'HISTORIAL',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            letterSpacing: 1.5,
+          ),
+        ),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

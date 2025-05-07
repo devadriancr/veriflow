@@ -27,7 +27,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _fieldFocusChange(
       BuildContext context, FocusNode current, FocusNode next) {
-    current.unfocus();
     FocusScope.of(context).requestFocus(next);
   }
 
@@ -35,10 +34,25 @@ class _HomeScreenState extends State<HomeScreen> {
     _containerController.clear();
     _visualAidController.clear();
     _finalLabelController.clear();
-    _containerFocus.requestFocus();
+    FocusScope.of(context).requestFocus(_containerFocus);
   }
 
   Future<void> _validateAndNavigate() async {
+    if (_containerController.text.isEmpty) {
+      _showErrorDialog('Contenedor', 'Este campo no puede estar vacío.');
+      return;
+    }
+
+    if (_visualAidController.text.isEmpty) {
+      _showErrorDialog('Ayuda Visual', 'Este campo no puede estar vacío.');
+      return;
+    }
+
+    if (_finalLabelController.text.isEmpty) {
+      _showErrorDialog('Etiqueta Final', 'Este campo no puede estar vacío.');
+      return;
+    }
+
     if (!_containerController.text.startsWith('C-')) {
       _showErrorDialog('Contenedor',
           'Revisa que el código se haya escaneado correctamente.');
@@ -48,6 +62,13 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!_visualAidController.text.startsWith('V-')) {
       _showErrorDialog('Ayuda Visual',
           'Revisa que el código se haya escaneado correctamente.');
+      return;
+    }
+
+    if (_finalLabelController.text.contains('C-') ||
+        _finalLabelController.text.contains('V-')) {
+      _showErrorDialog(
+          'Etiqueta Final', 'Revisa que se haya escaneado la etiqueta final.');
       return;
     }
 
@@ -88,7 +109,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('VERIFLOW',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              letterSpacing: 1.5,
+            )),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.history, size: 28),
@@ -99,66 +125,127 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _containerController,
-                  focusNode: _containerFocus,
-                  decoration: const InputDecoration(
-                    labelText: 'Contenedor',
-                    hintText: 'C-XXXXX',
-                  ),
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) => _fieldFocusChange(
-                      context, _containerFocus, _visualAidFocus),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    _buildInputField(
+                      controller: _containerController,
+                      focusNode: _containerFocus,
+                      label: 'Contenedor',
+                      hint: 'C-XXXXX',
+                      icon: Icons.local_shipping,
+                      nextFocus: _visualAidFocus,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInputField(
+                      controller: _visualAidController,
+                      focusNode: _visualAidFocus,
+                      label: 'Ayuda Visual',
+                      hint: 'V-XXXXX',
+                      icon: Icons.article,
+                      nextFocus: _finalLabelFocus,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInputField(
+                      controller: _finalLabelController,
+                      focusNode: _finalLabelFocus,
+                      label: 'Etiqueta Final',
+                      hint: 'XXXXX',
+                      icon: Icons.local_offer,
+                      isLast: true,
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _visualAidController,
-                  focusNode: _visualAidFocus,
-                  decoration: const InputDecoration(
-                    labelText: 'Ayuda Visual',
-                    hintText: 'V-XXXXX',
-                  ),
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) => _fieldFocusChange(
-                      context, _visualAidFocus, _finalLabelFocus),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _finalLabelController,
-                  focusNode: _finalLabelFocus,
-                  decoration: const InputDecoration(
-                    labelText: 'Etiqueta Final',
-                    hintText: 'XXXXX',
-                  ),
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _validateAndNavigate(),
-                ),
-                const SizedBox(height: 80),
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
-            child: ElevatedButton(
-              onPressed: _validateAndNavigate,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: Colors.blue[900],
               ),
-              child: const Text('VALIDAR',
-                  style: TextStyle(
-                      fontSize: 16, color: Colors.white, letterSpacing: 1.2)),
             ),
+            _buildValidateButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String label,
+    required String hint,
+    required IconData icon,
+    FocusNode? nextFocus,
+    bool isLast = false,
+  }) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: Colors.blue[900]),
+        filled: true,
+        fillColor: Colors.grey[50],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey[400]!), // Borde visible
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.blue[900]!, width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      ),
+      style: TextStyle(color: Colors.grey[800], fontSize: 16),
+      textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
+      onSubmitted: (_) {
+        if (isLast) {
+          _validateAndNavigate();
+        } else {
+          _fieldFocusChange(context, focusNode, nextFocus!);
+        }
+      },
+    );
+  }
+
+  Widget _buildValidateButton() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, top: 8, left: 8, right: 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _validateAndNavigate,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[900],
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+            ),
+            elevation: 3,
+            shadowColor: Colors.blue[900]!.withOpacity(0.3),
           ),
-        ],
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 24),
+              SizedBox(width: 12),
+              Text(
+                'VALIDAR',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
