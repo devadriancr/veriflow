@@ -101,12 +101,12 @@ class _RecordsScreenState extends State<RecordsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 24),
-                _buildCompactInfoItem(
-                    Icons.local_shipping, record.containerCode),
+                _buildCompactInfoItem(Icons.local_offer, record.finalLabelCode),
                 const SizedBox(height: 6),
                 _buildCompactInfoItem(Icons.article, record.visualAidCode),
                 const SizedBox(height: 6),
-                _buildCompactInfoItem(Icons.local_offer, record.finalLabelCode),
+                _buildCompactInfoItem(
+                    Icons.local_shipping, record.containerCode),
               ],
             ),
           ],

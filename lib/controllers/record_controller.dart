@@ -9,20 +9,36 @@ class RecordController {
     String visualAidCode,
     String finalLabelCode,
   ) async {
-    final isValidFormat = containerCode.startsWith('C-') &&
-        visualAidCode.startsWith('V-') &&
-        containerCode.length > 2 &&
-        visualAidCode.length > 2;
+    // 1. Verificar si hay campos vacíos (automaticamente NG)
+    final hasEmptyFields = containerCode.isEmpty ||
+        visualAidCode.isEmpty ||
+        finalLabelCode.isEmpty;
 
-    if (!isValidFormat) {
+    if (hasEmptyFields) {
       return _saveRecord(false, containerCode, visualAidCode, finalLabelCode);
     }
 
+    // 2. Verificar formatos correctos (C- y V-)
+    final containerValid =
+        containerCode.startsWith('C-') && containerCode.length > 2;
+    final visualAidValid =
+        visualAidCode.startsWith('V-') && visualAidCode.length > 2;
+
+    if (!containerValid || !visualAidValid) {
+      return _saveRecord(false, containerCode, visualAidCode, finalLabelCode);
+    }
+
+    // 3. Extraer códigos base (lo que viene después del prefijo)
     final containerBase = containerCode.substring(2);
     final visualAidBase = visualAidCode.substring(2);
 
-    final isValid = containerBase == visualAidBase &&
-        finalLabelCode.contains(containerBase);
+    // 4. Verificar que los códigos base coincidan
+    if (containerBase != visualAidBase) {
+      return _saveRecord(false, containerCode, visualAidCode, finalLabelCode);
+    }
+
+    // 5. Verificar que el código base esté incluido en la etiqueta final
+    final isValid = finalLabelCode.contains(containerBase);
 
     return _saveRecord(isValid, containerCode, visualAidCode, finalLabelCode);
   }

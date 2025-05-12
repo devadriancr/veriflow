@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _containerFocus.requestFocus();
+    _finalLabelFocus.requestFocus();
   }
 
   void _fieldFocusChange(
@@ -34,74 +34,72 @@ class _HomeScreenState extends State<HomeScreen> {
     _containerController.clear();
     _visualAidController.clear();
     _finalLabelController.clear();
-    FocusScope.of(context).requestFocus(_containerFocus);
+    FocusScope.of(context).requestFocus(_finalLabelFocus);
   }
 
   Future<void> _validateAndNavigate() async {
-    if (_containerController.text.isEmpty) {
-      _showErrorDialog('Contenedor', 'Este campo no puede estar vacío.');
+    // 1. Validar campos vacíos
+    if (_containerController.text.isEmpty ||
+        _visualAidController.text.isEmpty ||
+        _finalLabelController.text.isEmpty) {
+      final savedStatus = await RecordController.validateAndSave(
+        _containerController.text,
+        _visualAidController.text,
+        _finalLabelController.text,
+      );
+      _navigateToResult(savedStatus);
       return;
     }
 
-    if (_visualAidController.text.isEmpty) {
-      _showErrorDialog('Ayuda Visual', 'Este campo no puede estar vacío.');
+    // 2. Validar formatos C- y V-
+    final containerValid = _containerController.text.startsWith('C-');
+    final visualAidValid = _visualAidController.text.startsWith('V-');
+
+    if (!containerValid || !visualAidValid) {
+      final savedStatus = await RecordController.validateAndSave(
+        _containerController.text,
+        _visualAidController.text,
+        _finalLabelController.text,
+      );
+      _navigateToResult(savedStatus);
       return;
     }
 
-    if (_finalLabelController.text.isEmpty) {
-      _showErrorDialog('Etiqueta Final', 'Este campo no puede estar vacío.');
+    // 3. Extraer códigos base y validar coincidencia
+    final containerBase = _containerController.text.substring(2);
+    final visualAidBase = _visualAidController.text.substring(2);
+
+    if (containerBase != visualAidBase) {
+      final savedStatus = await RecordController.validateAndSave(
+        _containerController.text,
+        _visualAidController.text,
+        _finalLabelController.text,
+      );
+      _navigateToResult(savedStatus);
       return;
     }
 
-    if (!_containerController.text.startsWith('C-')) {
-      _showErrorDialog('Contenedor',
-          'Revisa que el código se haya escaneado correctamente.');
-      return;
-    }
+    // 4. Validar presencia en etiqueta final
+    final isValid = _finalLabelController.text.contains(containerBase);
 
-    if (!_visualAidController.text.startsWith('V-')) {
-      _showErrorDialog('Ayuda Visual',
-          'Revisa que el código se haya escaneado correctamente.');
-      return;
-    }
-
-    if (_finalLabelController.text.contains('C-') ||
-        _finalLabelController.text.contains('V-')) {
-      _showErrorDialog(
-          'Etiqueta Final', 'Revisa que se haya escaneado la etiqueta final.');
-      return;
-    }
-
-    final isValid = await RecordController.validateAndSave(
+    // Guardar en BD y mostrar resultado
+    final savedStatus = await RecordController.validateAndSave(
       _containerController.text,
       _visualAidController.text,
       _finalLabelController.text,
     );
 
     if (!mounted) return;
+    _navigateToResult(savedStatus);
+  }
 
+  void _navigateToResult(bool isValid) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ResultScreen(isValid: isValid),
       ),
     ).then((_) => _resetForm());
-  }
-
-  void _showErrorDialog(String title, String content) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK'),
-          )
-        ],
-      ),
-    );
   }
 
   @override
@@ -135,11 +133,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const SizedBox(height: 20),
                     _buildInputField(
-                      controller: _containerController,
-                      focusNode: _containerFocus,
-                      label: 'Contenedor',
-                      hint: 'C-XXXXX',
-                      icon: Icons.local_shipping,
+                      controller: _finalLabelController,
+                      focusNode: _finalLabelFocus,
+                      label: 'Etiqueta Final',
+                      hint: 'XXXXX',
+                      icon: Icons.local_offer,
                       nextFocus: _visualAidFocus,
                     ),
                     const SizedBox(height: 12),
@@ -149,15 +147,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       label: 'Ayuda Visual',
                       hint: 'V-XXXXX',
                       icon: Icons.article,
-                      nextFocus: _finalLabelFocus,
+                      nextFocus: _containerFocus,
                     ),
                     const SizedBox(height: 12),
                     _buildInputField(
-                      controller: _finalLabelController,
-                      focusNode: _finalLabelFocus,
-                      label: 'Etiqueta Final',
-                      hint: 'XXXXX',
-                      icon: Icons.local_offer,
+                      controller: _containerController,
+                      focusNode: _containerFocus,
+                      label: 'Contenedor',
+                      hint: 'C-XXXXX',
+                      icon: Icons.local_shipping,
                       isLast: true,
                     ),
                     const SizedBox(height: 20),
@@ -192,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
         fillColor: Colors.grey[50],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[400]!), // Borde visible
+          borderSide: BorderSide(color: Colors.grey[400]!),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -248,5 +246,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _containerController.dispose();
+    _visualAidController.dispose();
+    _finalLabelController.dispose();
+    _containerFocus.dispose();
+    _visualAidFocus.dispose();
+    _finalLabelFocus.dispose();
+    super.dispose();
   }
 }
