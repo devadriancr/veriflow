@@ -1,4 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    
+    <!-- Permiso para acceso a Internet (necesario para API y NetworkInfo) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Permiso para WiFi (necesario para obtener IP y BSSID/MAC) -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <!-- Permiso para ubicación aproximada (necesario en Android 10+ para BSSID) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- Permiso para Bluetooth (algunos dispositivos Zebra lo requieren) -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    
     <application
         android:label="veriflow"
         android:name="${applicationName}"

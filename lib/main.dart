@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:veriflow/views/home_screen.dart';
-import 'package:flutter/widgets.dart';
+import 'package:veriflow/services/sync_manager.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,12 +11,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Iniciar el sincronizador periódico
+    SyncManager().startPeriodicSync();
+
     return MaterialApp(
       title: 'VERIFLOW',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor:
-            const Color(0xFFFAFAFA), // Equivalente a Colors.grey[50]
+        scaffoldBackgroundColor: const Color(0xFFFAFAFA),
         elevatedButtonTheme: const ElevatedButtonThemeData(
           style: ButtonStyle(
             padding: WidgetStatePropertyAll(EdgeInsets.symmetric(vertical: 16)),
@@ -35,7 +37,7 @@ class MyApp extends StatelessWidget {
           fillColor: Colors.white,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0D47A1), // Equivalente a Colors.blue[900]
+          backgroundColor: Color(0xFF0D47A1),
           foregroundColor: Colors.white,
         ),
       ),

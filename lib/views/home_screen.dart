@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:veriflow/controllers/record_controller.dart';
+import 'package:veriflow/services/lock_service.dart';
 import 'package:veriflow/views/records_screen.dart';
 import 'package:veriflow/views/result_screen.dart';
 
@@ -22,7 +23,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _checkAppLock();
     _finalLabelFocus.requestFocus();
+  }
+
+  void _checkAppLock() async {
+    if (await LockService.isLocked()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ResultScreen(isValid: false),
+          ),
+        );
+      });
+    }
   }
 
   void _fieldFocusChange(
@@ -38,7 +53,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _validateAndNavigate() async {
-    // 1. Validar campos vacíos
+    if (_containerController.text.isEmpty) {
+      _showErrorDialog('Contenedor', 'Este campo no puede estar vacío.');
+      return;
+    }
+
+    if (_visualAidController.text.isEmpty) {
+      _showErrorDialog('Ayuda Visual', 'Este campo no puede estar vacío.');
+      return;
+    }
+
+    if (_finalLabelController.text.isEmpty) {
+      _showErrorDialog('Etiqueta Final', 'Este campo no puede estar vacío.');
+      return;
+    }
+
     if (_containerController.text.isEmpty ||
         _visualAidController.text.isEmpty ||
         _finalLabelController.text.isEmpty) {
@@ -51,7 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // 2. Validar formatos C- y V-
     final containerValid = _containerController.text.startsWith('C-');
     final visualAidValid = _visualAidController.text.startsWith('V-');
 
@@ -65,7 +93,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // 3. Extraer códigos base y validar coincidencia
     final containerBase = _containerController.text.substring(2);
     final visualAidBase = _visualAidController.text.substring(2);
 
@@ -79,10 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // 4. Validar presencia en etiqueta final
-    final isValid = _finalLabelController.text.contains(containerBase);
-
-    // Guardar en BD y mostrar resultado
     final savedStatus = await RecordController.validateAndSave(
       _containerController.text,
       _visualAidController.text,
@@ -93,25 +116,49 @@ class _HomeScreenState extends State<HomeScreen> {
     _navigateToResult(savedStatus);
   }
 
-  void _navigateToResult(bool isValid) {
-    Navigator.push(
+  void _navigateToResult(bool isValid) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ResultScreen(isValid: isValid),
       ),
-    ).then((_) => _resetForm());
+    );
+
+    if (await LockService.isLocked()) {
+      _navigateToResult(false);
+    } else {
+      _resetForm();
+    }
+  }
+
+  void _showErrorDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          )
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('VERIFLOW',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              letterSpacing: 1.5,
-            )),
+        title: const Text(
+          'VERIFLOW',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            letterSpacing: 1.5,
+          ),
+        ),
         centerTitle: true,
         actions: [
           IconButton(
